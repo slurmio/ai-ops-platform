@@ -1,20 +1,27 @@
-## Install kubespray
+# AI-OPS-PLATFORM
 
-## Run following commands from kubespray directory:
+Данный проект представляет из себя настройки и конфигурации, которые необходимы для реализации развертывания **production-ready kubernetes кластера**, а также **ASR (преобразование аудио файла в текстовый формат)** приложения в нем.
 
-```bash
-VENVDIR=kubespray-venv
-KUBESPRAYDIR=slurm_webinar_16_04_25
-python3 -m venv $VENVDIR
-source $VENVDIR/bin/activate
-cd $KUBESPRAYDIR
-pip install -U -r requirements.txt
-ansible-playbook cluster.yml -i inventory/hetzner/inventory.ini --key-file ../keys/hetzner -e @vars.yml
-```
-## To install ingress controller to Kube
-
-```bash
-ansible-playbook kubernetes/install-ingress.yml 
+# Команда для тестирования
+Заменить ```/home/p/privet.m4a``` на путь к своему аудио файлу
+``` 
+curl -X POST \ 
+    -H "content-type: multipart/form-data" \
+    -F "audio_file=@/home/p/privet.m4a" \
+    https://slurm-ai.ru/asr?output=json | jq '.text'
 ```
 
-DO NOT forget to set proper external ip vars to %CP_IP% %NODE1_IP% %NODE2_IP% in inventory as well as %EXTERNAL_IP% in ingress
+# Структура проекта
+
+## kubespray
+Эта директория является частью инвентаря **Kubespray**, которая используется для настройки кластера **Kubernetes**. Здесь содержатся общие настройки для подготовки всего кластера.
+## kubernetes
+Директория kubernetes содержит конфигурацию для развертывания ingress-nginx используя Helm, а также зависимость Ansible коллекций для работы с Kubernetes.
+## ai-app
+Содержит манифесты, которые необходимы для развертывания и настройки приложения **AI(ASR Whisper)** на платформе Kubernetes.
+ ## ai-frontend-extra
+ Фронтенд, _нагенерированный IA_. Требует добаботки.
+ Текущий функционал:
+* Проверка формата загружаемого файла(mp3, mp4, ogg, m4a)
+* Проверка размера файла(ограничение 10Мб)
+![extra](ai-frontend-extra/image.png "extra")

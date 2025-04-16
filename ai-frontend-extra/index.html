@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ИАА</title>
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<script>tailwind.config={theme:{extend:{colors:{primary:'#3b82f6',secondary:'#64748b'},borderRadius:{'none':'0px','sm':'4px',DEFAULT:'8px','md':'12px','lg':'16px','xl':'20px','2xl':'24px','3xl':'32px','full':'9999px','button':'8px'}}}}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
+<style>
+:where([class^="ri-"])::before { content: "\f3c2"; }
+body {
+font-family: 'Inter', sans-serif;
+background-color: #111827;
+color: #e5e7eb;
+}
+.file-upload-area {
+border: 2px dashed #374151;
+transition: all 0.3s ease;
+}
+.file-upload-area.drag-active {
+border-color: #3b82f6;
+background-color: rgba(59, 130, 246, 0.1);
+}
+.spinner {
+border: 3px solid rgba(59, 130, 246, 0.1);
+border-radius: 50%;
+border-top: 3px solid #3b82f6;
+width: 40px;
+height: 40px;
+animation: spin 1s linear infinite;
+}
+@keyframes spin {
+0% { transform: rotate(0deg); }
+100% { transform: rotate(360deg); }
+}
+input[type="file"] {
+display: none;
+}
+</style>
+</head>
+<body class="min-h-screen">зависимость Ansible коллекций для работы с Kubernetes
+<div class="container mx-auto px-4 py-12 max-w-4xl">
+<header class="text-center mb-12">
+<h1 class="text-3xl font-bold text-white">Инструмент анализа аудио</h1>
+<p class="text-gray-400 max-w-2xl mx-auto">Загрузите ваш файл для мгновенного анализа. Наши продвинутые алгоритмы обработают содержимое и предоставят текстовую рашшифровку речи.</p>
+</header>
+<main>
+<!-- Sample Text Display -->
+<section class="mb-12">
+<h2 class="text-xl font-semibold text-gray-100 mb-4">Работа с API</h2>
+<div class="bg-gray-900 border border-gray-700 rounded p-6 shadow-sm">
+<div class="max-h-64 overflow-y-auto text-gray-300">
+<p class="mb-4">Запрос можно послать через POST</p>
+<p class="mb-4">curl -X POST -H "content-type: multipart/form-data" -F "audio_file=@/Users/p/privet.m4a" https://slurm-ai.ru/asr\?output\=json | jq '.text'</p>
+<p>Замените /Users/p/privet.m4a на путь к вашему файлу.</p>
+</div>
+</div>
+</section>
+<!-- File Upload Section -->
+<section class="mb-12">
+<h2 class="text-xl font-semibold text-gray-100 mb-4">Загрузка файла</h2>
+<div id="upload-container" class="file-upload-area bg-gray-900 rounded p-8 text-center flex flex-col items-center justify-center">
+<div class="w-16 h-16 flex items-center justify-center bg-gray-800 rounded-full mb-4">
+<i class="ri-upload-cloud-line ri-2x text-primary"></i>
+</div>
+<p class="text-gray-300 mb-4">Перетащите файл или нажмите "загрузить файл"</p>
+<input type="file" id="file-input" accept=".mp3,.m4a,.mp4,.ogg">
+<button id="upload-button" class="bg-primary text-white px-6 py-3 rounded-button font-medium hover:bg-blue-600 transition-colors whitespace-nowrap">
+Загрузить файл
+</button>
+<p class="text-gray-500 text-sm mt-4">Поддерживаемые форматы: .ogg, .mp3, .mp4, .m4a (Макс. размер: 10MB)</p>
+</div>
+</section>
+<!-- Loading State -->
+<section id="loading-section" class="hidden mb-12 text-center py-8">
+<div class="flex flex-col items-center justify-center">
+<div class="spinner mb-4"></div>
+<p class="text-gray-300">Processing your file...</p>
+<p class="text-gray-500 text-sm mt-2">This may take a few moments</p>
+</div>
+</section>
+<!-- Results Section -->
+<section id="results-section" class="hidden mb-12">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-xl font-semibold text-gray-100">Результаты анализа</h2>
+<button id="copy-results" class="text-primary flex items-center gap-2 hover:text-blue-700 transition-colors">
+<i class="ri-file-copy-line"></i>
+<span>Copy Results</span>
+</button>
+</div>
+<div class="bg-gray-900 border border-gray-700 rounded p-6 shadow-sm">
+<div id="status-indicator" class="mb-4 px-4 py-2 rounded-md inline-flex items-center">
+<i class="ri-checkbox-circle-line mr-2"></i>
+<span id="status-text">Analysis completed successfully</span>
+</div>
+<div id="results-content" class="text-gray-300 whitespace-pre-line">
+<!-- Results will be displayed here -->
+</div>
+</div>
+</section>
+</main>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+const fileInput = document.getElementById('file-input');
+const uploadButton = document.getElementById('upload-button');
+const uploadContainer = document.getElementById('upload-container');
+const loadingSection = document.getElementById('loading-section');
+const resultsSection = document.getElementById('results-section');
+const resultsContent = document.getElementById('results-content');
+const statusIndicator = document.getElementById('status-indicator');
+const statusText = document.getElementById('status-text');
+const copyResults = document.getElementById('copy-results');
+// Handle file upload button click
+uploadButton.addEventListener('click', function() {
+fileInput.click();
+});
+// Handle file selection
+fileInput.addEventListener('change', function() {
+if (fileInput.files.length > 0) {
+const file = fileInput.files[0];
+if (validateFile(file)) {
+uploadFile(file);
+}
+}
+});
+// Handle drag and drop
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+uploadContainer.addEventListener(eventName, preventDefaults, false);
+});
+function preventDefaults(e) {
+e.preventDefault();
+e.stopPropagation();
+}
+['dragenter', 'dragover'].forEach(eventName => {
+uploadContainer.addEventListener(eventName, highlight, false);
+});
+['dragleave', 'drop'].forEach(eventName => {
+uploadContainer.addEventListener(eventName, unhighlight, false);
+});
+function highlight() {
+uploadContainer.classList.add('drag-active');
+}
+function unhighlight() {
+uploadContainer.classList.remove('drag-active');
+}
+uploadContainer.addEventListener('drop', handleDrop, false);
+function handleDrop(e) {
+const dt = e.dataTransfer;
+const file = dt.files[0];
+if (validateFile(file)) {
+uploadFile(file);
+}
+}
+function validateFile(file) {
+const validTypes = ['.mp3', '.ogg', '.m4a', '.mp4'];
+const fileType = '.' + file.name.split('.').pop().toLowerCase();
+if (!validTypes.includes(fileType)) {
+showError('Invalid file type. Please upload a .txt, .doc, .docx, or .pdf file.');
+return false;
+}
+if (file.size > 10 * 1024 * 1024) { // 10MB
+showError('File is too large. Maximum file size is 10MB.');
+return false;
+}
+return true;
+}
+function showError(message) {
+resultsSection.classList.remove('hidden');
+loadingSection.classList.add('hidden');
+statusIndicator.className = 'mb-4 px-4 py-2 rounded-md inline-flex items-center bg-red-50 text-red-700';
+statusIndicator.innerHTML = '<i class="ri-error-warning-line mr-2"></i><span>' + message + '</span>';
+resultsContent.textContent = '';
+}
+function uploadFile(file) {
+// Show loading state
+loadingSection.classList.remove('hidden');
+resultsSection.classList.add('hidden');
+// Create FormData
+const formData = new FormData();
+formData.append('file', file);
+// Simulate API call with timeout
+setTimeout(() => {
+// Hide loading state
+loadingSection.classList.add('hidden');
+resultsSection.classList.remove('hidden');
+// Show success state
+statusIndicator.className = 'mb-4 px-4 py-2 rounded-md inline-flex items-center bg-green-50 text-green-700';
+statusText.textContent = 'Analysis completed successfully';
+// Display mock results
+//resultsContent.innerHTML = generateMockResults(file.name);
+}, 2000);
+//In a real application, you would use fetch or XMLHttpRequest to send the file to your API
+
+fetch('https://localhost:9000/asr?output=json', {
+//method: 'GET'
+ method: 'POST',
+ body: formData
+})
+.then(response => {
+if (!response.ok) {
+throw new Error('Network response was not ok');
+}
+return response.json();
+})
+.then(data => {
+// Hide loading state
+loadingSection.classList.add('hidden');
+resultsSection.classList.remove('hidden');
+// Show success state
+statusIndicator.className = 'mb-4 px-4 py-2 rounded-md inline-flex items-center bg-green-50 text-green-700';
+statusText.textContent = 'Analysis completed successfully';
+// Display results
+resultsContent.textContent = JSON.stringify(data, null, 2);
+})
+.catch(error => {
+// Hide loading state
+loadingSection.classList.add('hidden');
+// Show error state
+showError('An error occurred while processing your file. Please try again.');
+console.error('Error:', error);
+});
+
+}
+// Copy results to clipboard
+copyResults.addEventListener('click', function() {
+const textToCopy = resultsContent.textContent;
+navigator.clipboard.writeText(textToCopy).then(() => {
+const originalText = copyResults.innerHTML;
+copyResults.innerHTML = '<i class="ri-checkbox-circle-line"></i><span>Copied!</span>';
+setTimeout(() => {
+copyResults.innerHTML = originalText;
+}, 2000);
+}).catch(err => {
+console.error('Failed to copy text: ', err);
+});
+});
+});
+</script>
+</body>
+</html>

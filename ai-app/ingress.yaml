@@ -1,0 +1,30 @@
+# https://kubernetes.io/docs/concepts/services-networking/ingress/#the-ingress-resource
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ai-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/proxy-body-size: "500m" # max size
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"  # 10 minutes
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"  # 10 minutes
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60" # 60s for connection
+  namespace: ai-ns
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+      - slurm-ai.ru
+    secretName: ai-tls
+  rules:
+  - host: slurm-ai.ru
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ai-app
+            port:
+              number: 80

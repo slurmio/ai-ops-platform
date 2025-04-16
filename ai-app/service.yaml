@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-app
+  namespace: ai-ns
+spec:
+  selector:
+    app: ai-app
+  type: ClusterIP
+  ports:
+  - name: ai-app
+    port: 80
+    targetPort: 9000

@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  ai-app
+  namespace: ai-ns
+  labels:
+    app:  ai-app
+spec:
+  selector:
+    matchLabels:
+      app: ai-app
+  replicas: 1 #16
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app:  ai-app
+    # spec:
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - enabled
+      containers:
+      - name:  ai-app
+        image:  onerahmet/openai-whisper-asr-webservice:latest
+        env:
+        - name: ASR_MODEL
+          value: tiny
+        - name: ASR_ENGINE
+          value: faster_whisper
+        - name: ASR_DEVICE
+          value: cpu
+        ports:
+        - containerPort:  9000
+          name:  ai-app
