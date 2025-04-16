@@ -1,0 +1,16 @@
+---
+- name: Deploy ingress-nginx using Helm
+  hosts: localhost
+  tasks:
+    - name: Install ingress-nginx using Helm
+      community.kubernetes.helm:
+        chart_repo_url: https://kubernetes.github.io/ingress-nginx
+        chart_ref: ingress-nginx
+        release_name: ingress-nginx
+        namespace: ingress-nginx
+        create_namespace: true
+        values:
+          controller:
+            service:
+              type: LoadBalancer
+              loadBalancerIP: %EXTERNAL_IP%
